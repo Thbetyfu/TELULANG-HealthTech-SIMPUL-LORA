@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { GlassCard } from '../components/ui/GlassCard';
-import { GlassBadge } from '../components/ui/GlassBadge';
 import { LoraTask } from '../types/task.type';
+import { Truck, CheckCircle2, Send, Thermometer, ShieldAlert } from 'lucide-react';
 
 export const LoraHubDispatchView: React.FC = () => {
   const [tasks, setTasks] = useState<LoraTask[]>([
@@ -40,79 +39,90 @@ export const LoraHubDispatchView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(222,47%,7%)] p-6 font-sans text-white">
-      <header className="mb-6 flex items-center justify-between border-b border-[hsla(210,100%,75%,0.1)] pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[hsl(174,100%,41%)]">
-            LORA Hub Dispatch Portal
-          </h1>
-          <p className="text-xs text-gray-400">Pos Distribusi Logistik Rakyat (Last-Mile Community Dispatch)</p>
+    <div className="min-h-screen bg-[hsl(230,25%,8%)] p-6 font-sans text-gray-100 max-w-7xl mx-auto selection:bg-[hsl(172,85%,45%)] selection:text-black">
+      <header className="mb-8 flex items-center justify-between rounded-[28px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-5 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[hsl(172,85%,45%)] text-gray-950 shadow-lg shadow-[hsl(172,85%,45%,0.25)]">
+            <Truck className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+              LORA Hub Dispatch Portal
+            </h1>
+            <p className="text-xs text-gray-400">Pos Distribusi Logistik Rakyat (Last-Mile Community Dispatch)</p>
+          </div>
         </div>
-        <div className="rounded-full bg-[hsl(190,80%,18%)] px-4 py-1.5 text-xs font-semibold text-[hsl(190,100%,80%)] border border-[hsl(190,95%,50%,0.3)]">
+        <div className="rounded-full bg-[hsl(172,75%,14%)] px-4 py-2 text-xs font-bold text-[hsl(172,90%,82%)] border border-[hsl(172,85%,45%,0.3)]">
           Kurir On-Duty: 18 Kurir
         </div>
       </header>
 
       {/* Metrics Banner */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <GlassCard variant="filled" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-400">Total Delivery Tasks</span>
-          <span className="text-2xl font-bold text-white">{tasks.length}</span>
-        </GlassCard>
-        <GlassCard variant="filled" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-400">Rata-rata Lead Time</span>
-          <span className="text-2xl font-bold text-emerald-400">48.5 menit (-19.2%)</span>
-        </GlassCard>
-        <GlassCard variant="filled" className="flex flex-col gap-1">
-          <span className="text-xs text-gray-400">Rasio Kurir Komunitas</span>
-          <span className="text-2xl font-bold text-cyan-400">100% Inklusif Lokal</span>
-        </GlassCard>
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-[24px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-5 shadow-xl">
+          <span className="text-xs text-gray-400 font-medium">Total Delivery Tasks</span>
+          <span className="text-3xl font-black text-white block mt-1">{tasks.length}</span>
+        </div>
+        <div className="rounded-[24px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-5 shadow-xl">
+          <span className="text-xs text-gray-400 font-medium">Rata-rata Lead Time</span>
+          <span className="text-3xl font-black text-emerald-400 block mt-1">48.5 <span className="text-xs font-normal text-gray-400">menit (-19.2%)</span></span>
+        </div>
+        <div className="rounded-[24px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-5 shadow-xl">
+          <span className="text-xs text-gray-400 font-medium">Rasio Kurir Komunitas</span>
+          <span className="text-3xl font-black text-cyan-400 block mt-1">100% <span className="text-xs font-normal text-gray-400">Inklusif Lokal</span></span>
+        </div>
       </div>
 
       {/* Task Dispatch Table */}
-      <GlassCard variant="outlined">
-        <h2 className="mb-4 text-base font-bold text-white">Antrean Dispatch Obat (Prioritas Klaster III)</h2>
+      <div className="rounded-[28px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-7 shadow-2xl">
+        <h2 className="mb-6 text-lg font-black text-white">Antrean Dispatch Obat (Prioritas Klaster III)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-[hsla(210,100%,75%,0.15)] text-gray-400">
+            <thead className="border-b border-white/[0.08] text-gray-400 uppercase text-[10px] tracking-wider font-extrabold">
               <tr>
-                <th className="py-2">Task ID</th>
-                <th className="py-2">Destinasi Faskes</th>
-                <th className="py-2">Obat</th>
-                <th className="py-2">Cold-Chain</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Aksi</th>
+                <th className="py-3 px-3">Task ID</th>
+                <th className="py-3 px-3">Destinasi Faskes</th>
+                <th className="py-3 px-3">Obat</th>
+                <th className="py-3 px-3">Cold-Chain</th>
+                <th className="py-3 px-3">Status</th>
+                <th className="py-3 px-3">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[hsla(210,100%,75%,0.05)]">
+            <tbody className="divide-y divide-white/[0.05]">
               {tasks.map(task => (
-                <tr key={task.id} className="hover:bg-[hsl(217,30%,16%)]">
-                  <td className="py-3 font-mono font-bold text-cyan-400">#{task.id}</td>
-                  <td className="py-3 font-semibold text-white">{task.targetFacilityName}</td>
-                  <td className="py-3 text-emerald-300">{task.medicineName} ({task.quantity} unit)</td>
-                  <td className="py-3">
+                <tr key={task.id} className="hover:bg-[hsl(230,25%,8%)] transition-colors">
+                  <td className="py-4 px-3 font-mono font-bold text-cyan-400">#{task.id}</td>
+                  <td className="py-4 px-3 font-extrabold text-white">{task.targetFacilityName}</td>
+                  <td className="py-4 px-3 text-emerald-300 font-bold">{task.medicineName} ({task.quantity} unit)</td>
+                  <td className="py-4 px-3">
                     {task.requiresColdChain ? (
-                      <span className="rounded bg-rose-500/20 px-2 py-0.5 text-rose-300">2-8°C</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-3 py-1 text-[11px] font-bold text-rose-300 border border-rose-500/30">
+                        <Thermometer className="w-3 h-3 text-rose-400" />
+                        <span>2–8°C</span>
+                      </span>
                     ) : (
-                      <span className="text-gray-400">Suhu Ruang</span>
+                      <span className="text-gray-400 font-medium">Suhu Ruang</span>
                     )}
                   </td>
-                  <td className="py-3">
-                    <GlassBadge
-                      variant={task.status === 'IN_TRANSIT' ? 'pending' : 'cluster3'}
-                      label={task.status}
-                    />
+                  <td className="py-4 px-3">
+                    <span className="rounded-full bg-amber-500/20 px-3 py-1 text-[11px] font-bold text-amber-300 border border-amber-500/30">
+                      {task.status}
+                    </span>
                   </td>
-                  <td className="py-3">
+                  <td className="py-4 px-3">
                     {task.status === 'PENDING' ? (
                       <button
                         onClick={() => handleDispatchTask(task.id)}
-                        className="rounded-full bg-[hsl(174,100%,41%)] px-3 py-1 text-xs font-bold text-gray-950 transition hover:bg-[hsl(174,100%,48%)]"
+                        className="flex items-center gap-1.5 rounded-full bg-[hsl(172,85%,45%)] px-4 py-1.5 text-xs font-black text-gray-950 hover:scale-105 transition active:scale-95 shadow-md"
                       >
-                        Dispatch Kurir LORA
+                        <Send className="w-3.5 h-3.5 fill-current" />
+                        <span>Dispatch Kurir LORA</span>
                       </button>
                     ) : (
-                      <span className="text-xs text-emerald-400 font-semibold">✓ Dalam Perjalanan</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-extrabold">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Dalam Perjalanan</span>
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -120,7 +130,7 @@ export const LoraHubDispatchView: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 };

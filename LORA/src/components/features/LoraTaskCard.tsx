@@ -1,7 +1,6 @@
 import React from 'react';
-import { GlassCard } from '../ui/GlassCard';
-import { GlassBadge } from '../ui/GlassBadge';
 import { LoraTask } from '../../types/task.type';
+import { Thermometer, ShieldAlert, ArrowRight } from 'lucide-react';
 
 interface LoraTaskCardProps {
   task: LoraTask;
@@ -10,42 +9,50 @@ interface LoraTaskCardProps {
 
 export const LoraTaskCard: React.FC<LoraTaskCardProps> = ({ task, onSelectTask }) => {
   return (
-    <GlassCard variant={task.requiresColdChain ? 'outlined' : 'filled'} className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4 rounded-[24px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-5 shadow-xl transition-all duration-300 hover:border-[hsl(172,85%,45%,0.3)]">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-gray-400">#{task.id}</span>
-        <GlassBadge
-          variant={task.status === 'DELIVERED' ? 'delivered' : 'pending'}
-          label={task.status}
-        />
+        <span className="font-mono text-xs text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">#{task.id}</span>
+        <span
+          className={`rounded-full px-3 py-0.5 text-[10px] font-extrabold ${
+            task.status === 'DELIVERED'
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+          }`}
+        >
+          {task.status}
+        </span>
       </div>
 
       <div>
-        <h3 className="text-base font-semibold text-white">{task.targetFacilityName}</h3>
-        <p className="text-xs text-gray-400">{task.targetAddress}</p>
+        <h3 className="text-base font-extrabold text-white">{task.targetFacilityName}</h3>
+        <p className="text-xs text-gray-400 mt-0.5">{task.targetAddress}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-t border-[hsla(210,100%,75%,0.1)] pt-2 text-xs">
-        <span className="font-medium text-[hsl(174,100%,41%)]">
+      <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.08] pt-3 text-xs">
+        <span className="font-bold text-[hsl(172,85%,45%)]">
           Obat: {task.medicineName} ({task.quantity} unit)
         </span>
         {task.requiresColdChain && (
-          <span className="rounded-full bg-[hsl(346,80%,18%)] px-2.5 py-0.5 text-xs text-[hsl(346,100%,80%)] border border-[hsl(346,84%,61%,0.3)]">
-            Cold-Chain (2-8°C)
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-500/30">
+            <Thermometer className="w-3 h-3 text-rose-400" />
+            <span>Cold-Chain (2–8°C)</span>
           </span>
         )}
         {task.isHardDrug && (
-          <span className="rounded-full bg-[hsl(38,90%,18%)] px-2.5 py-0.5 text-xs text-[hsl(38,100%,80%)] border border-[hsl(38,92%,50%,0.3)]">
-            Obat Keras (Escort Apt)
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+            <ShieldAlert className="w-3 h-3 text-amber-400" />
+            <span>Obat Keras (Escort Apt)</span>
           </span>
         )}
       </div>
 
       <button
         onClick={() => onSelectTask(task)}
-        className="mt-1 w-full rounded-full bg-[hsl(174,100%,41%)] py-2.5 text-xs font-bold text-gray-950 transition hover:bg-[hsl(174,100%,48%)]"
+        className="flex items-center justify-center gap-2 w-full rounded-full bg-[hsl(172,85%,45%)] py-2.5 text-xs font-black text-gray-950 transition hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[hsl(172,85%,45%,0.15)]"
       >
-        Buka Tugas & Proof of Delivery (M3)
+        <span>Buka Tugas & Proof of Delivery</span>
+        <ArrowRight className="w-3.5 h-3.5" />
       </button>
-    </GlassCard>
+    </div>
   );
 };

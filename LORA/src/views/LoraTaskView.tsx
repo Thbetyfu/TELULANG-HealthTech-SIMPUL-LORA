@@ -3,119 +3,145 @@ import { useGeolocation } from '../hooks/useGeolocation';
 import { LoraTaskCard } from '../components/features/LoraTaskCard';
 import { SignatureCanvas } from '../components/ui/SignatureCanvas';
 import { LoraTask } from '../types/task.type';
+import { Truck, MapPin, ArrowLeft, CheckCircle2, Send, Radio } from 'lucide-react';
 
 export const LoraTaskView: React.FC = () => {
   const geo = useGeolocation();
+  const [tasks, setTasks] = useState<LoraTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<LoraTask | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Mock Active Tasks for Field Couriers
-  const mockTasks: LoraTask[] = [
-    {
-      id: 'TASK-LORA-9981',
-      sourceFacilityName: 'IFK Kabupaten Bandung',
-      targetFacilityName: 'Pustu Desa Sukamaju',
-      targetAddress: 'Kec. Bojongsoang, Kab. Bandung',
-      medicineName: 'Oksitosin Injeksi 10 UI/mL',
-      quantity: 50,
-      requiresColdChain: true,
-      isHardDrug: false,
-      status: 'ASSIGNED',
-      estimatedMinutes: 48.5,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'TASK-LORA-9982',
-      sourceFacilityName: 'Puskesmas Bojongsoang',
-      targetFacilityName: 'Pustu Desa Cihawuk',
-      targetAddress: 'Kec. Kertasari (Terpencil)',
-      medicineName: 'OAT Lini 2 (MDR-TB)',
-      quantity: 20,
-      requiresColdChain: false,
-      isHardDrug: true,
-      status: 'ASSIGNED',
-      estimatedMinutes: 62.0,
-      createdAt: new Date().toISOString()
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('http://localhost:3001/api/v1/lora/tasks');
+      if (res.ok) {
+        const json = await res.json();
+        setTasks(json.data || []);
+      }
+    } catch (_e) {
+      // fallback
     }
-  ];
+  };
 
-  const handleSubmitPoD = () => {
+  React.useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const handleSubmitPoD = async () => {
     if (!signature) {
       alert('Tanda tangan digital penerima (TTE) wajib diisi.');
       return;
     }
 
+    if (!selectedTask) return;
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const res = await fetch('http://localhost:3001/api/v1/lora/pod', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId: selectedTask.id,
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+          signatureTte: signature
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Gagal mengirim PoD ke server');
+      }
       setSubmitted(true);
-    }, 1200);
+    } catch (err: any) {
+      alert('Error pengiriman PoD: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(222,47%,7%)] p-4 text-white font-sans">
-      <header className="mb-6 flex items-center justify-between border-b border-[hsla(210,100%,75%,0.1)] pb-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-[hsl(174,100%,41%)]">
-            LORA Mobile PWA
-          </h1>
-          <p className="text-xs text-gray-400">Logistik Rakyat Field Courier App</p>
+    <div className="min-h-screen bg-[hsl(230,25%,8%)] p-4 sm:p-6 text-gray-100 font-sans max-w-2xl mx-auto selection:bg-[hsl(172,85%,45%)] selection:text-black">
+      {/* Mobile Top App Bar */}
+      <header className="mb-6 flex items-center justify-between rounded-[24px] border border-white/[0.08] bg-[hsl(230,20%,14%)] p-4 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[hsl(172,85%,45%)] text-gray-950 font-black text-base shadow-md shadow-[hsl(172,85%,45%,0.2)]">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-black tracking-tight text-white">
+              LORA Courier Mobile
+            </h1>
+            <p className="text-[11px] text-gray-400">Logistik Rakyat Field Courier App</p>
+          </div>
         </div>
-        <div className="text-right text-xs">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse mr-1" />
-          <span className="text-gray-300">PWA Online</span>
+        <div className="flex items-center gap-2 rounded-full bg-[hsl(230,25%,8%)] px-3 py-1 text-xs border border-white/[0.08]">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-gray-300 font-medium">PWA Online</span>
         </div>
       </header>
 
       {/* Geolocation Status Bar */}
-      <div className="mb-4 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-xs">
-        <span className="font-semibold text-cyan-300">GPS Location Lock: </span>
+      <div className="mb-6 rounded-[20px] border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs backdrop-blur-md">
+        <div className="flex items-center gap-2 mb-1">
+          <Radio className="w-4 h-4 text-cyan-300 animate-pulse" />
+          <span className="font-extrabold text-cyan-300">GPS Geolocation Locking:</span>
+        </div>
         {geo.loading ? (
-          <span className="text-gray-400">Mencari sinyal GPS...</span>
+          <span className="text-gray-400">Mencari sinyal GPS satelit...</span>
         ) : geo.error ? (
           <span className="text-rose-400">{geo.error}</span>
         ) : (
-          <span className="font-mono text-gray-200">
-            {geo.latitude?.toFixed(6)}, {geo.longitude?.toFixed(6)} (Aklimasi ±{geo.accuracy?.toFixed(0)}m)
-          </span>
+          <div className="flex items-center gap-1.5 font-mono text-gray-200 mt-1">
+            <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{geo.latitude?.toFixed(6)}, {geo.longitude?.toFixed(6)} (Presisi ±{geo.accuracy?.toFixed(0)}m)</span>
+          </div>
         )}
       </div>
 
       {!selectedTask ? (
         <div className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-gray-300">Tugas Pengiriman Terjadwal ({mockTasks.length}):</h2>
-          {mockTasks.map(task => (
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-white">Tugas Pengiriman Terjadwal ({tasks.length}):</h2>
+            <span className="text-xs text-gray-400">Diperbarui Live</span>
+          </div>
+          {tasks.map(task => (
             <LoraTaskCard key={task.id} task={task} onSelectTask={setSelectedTask} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-4 rounded-2xl border border-[hsla(210,100%,75%,0.2)] bg-[hsla(217,33%,17%,0.65)] p-5 backdrop-blur-md">
+        <div className="flex flex-col gap-5 rounded-[28px] border border-white/[0.1] bg-[hsl(230,20%,14%)] p-6 shadow-2xl backdrop-blur-xl">
           <button
             onClick={() => { setSelectedTask(null); setSubmitted(false); }}
-            className="self-start text-xs text-cyan-400 underline"
+            className="flex items-center gap-2 self-start rounded-full bg-[hsl(230,25%,8%)] px-4 py-1.5 text-xs font-bold text-cyan-400 border border-white/[0.08] hover:border-cyan-400/40 transition"
           >
-            ← Kembali ke Daftar Tugas
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Kembali ke Daftar Tugas</span>
           </button>
 
-          <h2 className="text-lg font-bold text-white">Proof of Delivery: #{selectedTask.id}</h2>
-          <p className="text-xs text-gray-300">Tujuan: {selectedTask.targetFacilityName}</p>
+          <div>
+            <span className="font-mono text-xs text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">#{selectedTask.id}</span>
+            <h2 className="text-xl font-black text-white mt-2">Proof of Delivery (PoD)</h2>
+            <p className="text-xs text-gray-300 mt-1">Faskes Penerima: <span className="font-bold text-emerald-300">{selectedTask.targetFacilityName}</span></p>
+          </div>
 
           {submitted ? (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/20 p-4 text-center text-xs text-emerald-300">
-              ✓ Proof of Delivery berhasil disimpan dan di-sync ke Cloud PDN!
+            <div className="flex items-center justify-center gap-2 rounded-[20px] border border-emerald-500/30 bg-emerald-500/20 p-5 text-center text-xs font-bold text-emerald-300 shadow-lg">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <span>Proof of Delivery & TTE Digital berhasil terverifikasi dan di-sync ke Cloud PDN!</span>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <SignatureCanvas onSaveSignature={setSignature} />
 
               <button
                 onClick={handleSubmitPoD}
                 disabled={isSubmitting}
-                className="w-full rounded-xl bg-[hsl(174,100%,41%)] py-3 text-sm font-bold text-gray-950 transition hover:bg-[hsl(174,100%,48%)] disabled:opacity-50"
+                className="flex items-center justify-center gap-2 w-full rounded-full bg-[hsl(172,85%,45%)] py-3.5 text-xs font-black text-gray-950 transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 shadow-xl shadow-[hsl(172,85%,45%,0.2)]"
               >
-                {isSubmitting ? 'Mengunggah PoD...' : 'Kirim Proof of Delivery (PoD)'}
+                <Send className="w-4 h-4 fill-current" />
+                <span>{isSubmitting ? 'Mengunggah Proof of Delivery (PoD)...' : 'Kirim Proof of Delivery (PoD)'}</span>
               </button>
             </div>
           )}

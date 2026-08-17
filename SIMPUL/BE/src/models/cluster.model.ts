@@ -7,6 +7,7 @@ export interface ProvinceIndicatorEntity {
   roadIndexX3: number;            // X3: Indeks Aksesibilitas Jalan
   humanDevelopmentIndexX4: number; // X4: IPM
   cluster?: number;                // 1 (Tinggi), 2 (Sedang), 3 (Rendah)
+  coordinates?: { x: number; y: number }; // Canvas GIS coordinates
 }
 
 export interface ClusterProfileEntity {

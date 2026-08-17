@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import stockRoutes from './routes/stock.routes';
 import clusterRoutes from './routes/cluster.routes';
 import satusehatRoutes from './routes/satusehat.routes';
+import disputeRoutes from './routes/dispute.routes';
+import loraRoutes from './routes/lora.routes';
+import redistributionRoutes from './routes/redistribution.routes';
 import { globalErrorHandler } from './middleware/error-handler.middleware';
 import { WebSocketService } from './services/websocket.service';
 
@@ -28,6 +31,9 @@ app.use(express.json());
 app.use('/api/v1/stocks', stockRoutes);
 app.use('/api/v1/analytics', clusterRoutes);
 app.use('/api/v1/integration/satusehat', satusehatRoutes);
+app.use('/api/v1/disputes', disputeRoutes);
+app.use('/api/v1/lora', loraRoutes);
+app.use('/api/v1/redistributions', redistributionRoutes);
 
 // Health Check
 app.get('/health', (_req: Request, res: Response) => {
