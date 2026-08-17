@@ -1,0 +1,26 @@
+# Excluded Folders & Files
+.agents/
+AGENTS.md
+docs/
+Rules/
+SEC_(SD2026020000224).docx
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment variables & Logs
+.env
+*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
