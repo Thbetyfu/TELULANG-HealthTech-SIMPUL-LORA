@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Map } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 export interface ProvinceSpatialData {
   id: string;
@@ -27,17 +28,24 @@ export const IndonesiaSpatialMap: React.FC<IndonesiaSpatialMapProps> = ({ onSele
     const fetchSpatialClusterData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:3001/api/v1/analytics/clusters');
+        const response = await fetch(apiUrl('/api/v1/analytics/provinces'));
         if (!response.ok) {
           throw new Error('Gagal terhubung ke SIMPUL/BE Analytics API Service');
         }
         const json = await response.json();
         
         if (json.data && Array.isArray(json.data)) {
-          const mappedProvinces: ProvinceSpatialData[] = json.data.map((item: any) => ({
+          const mappedProvinces: ProvinceSpatialData[] = json.data.map((item: {
+            provinceCode?: string;
+            provinceName: string;
+            cluster: 1 | 2 | 3;
+            availabilityRateY: number;
+            pharmacistRatioX1: number;
+            coordinates?: { x: number; y: number };
+          }) => ({
             id: item.provinceCode || item.provinceName.substring(0, 3).toUpperCase(),
             name: item.provinceName,
-            clusterId: item.cluster as (1 | 2 | 3),
+            clusterId: item.cluster,
             meanStockY: item.availabilityRateY,
             pharmacistRatioX1: item.pharmacistRatioX1,
             loraPriority: item.cluster === 3,
@@ -46,8 +54,9 @@ export const IndonesiaSpatialMap: React.FC<IndonesiaSpatialMapProps> = ({ onSele
           setProvinces(mappedProvinces);
           setError(null);
         }
-      } catch (err: any) {
-        setError(err.message || 'Koneksi ke backend SIMPUL/BE terputus.');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Koneksi ke backend SIMPUL/BE terputus.';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -99,7 +108,7 @@ export const IndonesiaSpatialMap: React.FC<IndonesiaSpatialMapProps> = ({ onSele
       {error && (
         <div className="mb-4 flex items-center gap-2 rounded-[16px] border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-300">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
-          <span>{error} (Pastikan server backend `SIMPUL/BE` aktif di port 3001).</span>
+          <span>{error} (Pastikan server backend SIMPUL/BE aktif di port 5000).</span>
         </div>
       )}
 

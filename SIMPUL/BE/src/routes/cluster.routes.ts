@@ -15,7 +15,11 @@ const olsService = new OLSRegressionService();
 const clusterController = new ClusterController(kmeansService, olsService);
 
 router.get('/profiles', clusterController.getClusterProfiles);
+router.get('/provinces', clusterController.getProvinces);
+router.get('/clusters', clusterController.getProvinces);
 router.get('/ols-metrics', clusterController.getOLSMetrics);
+router.get('/visuals/ols-chart.svg', clusterController.getOLSSvgChart);
+router.get('/visuals/discrepancy-report.svg', clusterController.getDiscrepancySvgReport);
 router.post('/predict', validateSchema(OLSPredictionInputSchema), clusterController.predictAvailability);
 
 export default router;

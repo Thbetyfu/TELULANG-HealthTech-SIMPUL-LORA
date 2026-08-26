@@ -18,3 +18,17 @@ export interface DiscrepancyAuditEntity {
   status: 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | 'FALSE_ALARM';
   flaggedAt: Date;
 }
+
+/** Seeded public transparency map nodes (Prioritas A demo). */
+export interface PublicFacilityMapEntity {
+  id: string;
+  facilityName: string;
+  provinceName: string;
+  cityName: string;
+  medicineName: string;
+  availableStock: number;
+  temperatureCelsius: number;
+  status: 'TERSEDIA' | 'MENIPIS' | 'KOSONG';
+  lat: number;
+  lng: number;
+}

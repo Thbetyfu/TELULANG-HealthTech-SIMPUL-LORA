@@ -4,6 +4,10 @@ import { ClusterProfileEntity, ProvinceIndicatorEntity } from '../models/cluster
 export class KMeansClusteringService {
   constructor(private clusterRepository: ClusterRepository) {}
 
+  async listProvinces(): Promise<ProvinceIndicatorEntity[]> {
+    return this.clusterRepository.getAllProvinces();
+  }
+
   async executeClustering(): Promise<ClusterProfileEntity[]> {
     const provinces = await this.clusterRepository.getAllProvinces();
 

@@ -33,4 +33,17 @@ export class StockController {
       next(error);
     }
   };
+
+  listPublicFacilities = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const facilities = await this.stockService.getPublicMapFacilities();
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        count: facilities.length,
+        data: facilities
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

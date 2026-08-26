@@ -23,4 +23,9 @@ router.get(
   stockController.listDiscrepancies
 );
 
+router.get(
+  '/facilities',
+  stockController.listPublicFacilities
+);
+
 export default router;

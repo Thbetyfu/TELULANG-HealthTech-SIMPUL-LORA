@@ -1,10 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { StockRepository } from '../repositories/stock.repository';
-import { StockEntity, DiscrepancyAuditEntity } from '../models/stock.model';
+import { StockEntity, DiscrepancyAuditEntity, PublicFacilityMapEntity } from '../models/stock.model';
 import { CreateStockReconciliationInput } from '../schemas/stock.schema';
 
 export class StockReconciliationService {
   constructor(private stockRepository: StockRepository) {}
+
+  async getPublicMapFacilities(): Promise<PublicFacilityMapEntity[]> {
+    return this.stockRepository.getPublicMapFacilities();
+  }
 
   async processReconciliation(input: CreateStockReconciliationInput): Promise<{
     stock: StockEntity;

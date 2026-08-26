@@ -28,7 +28,14 @@ export class WebSocketService {
   public initialize(httpServer: HttpServer): void {
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: ['http://localhost:3000', 'http://localhost:5173', 'https://simpul.kemkes.go.id'],
+        origin: [
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          'http://localhost:4173',
+          'http://localhost:3000',
+          'https://simpul-lora.vercel.app',
+          '*'
+        ],
         methods: ['GET', 'POST']
       }
     });
@@ -36,7 +43,22 @@ export class WebSocketService {
     this.io.on('connection', (socket: Socket) => {
       console.log(`[SIMPUL WebSocket]: Client connected - ${socket.id}`);
 
+      // Demo: emit one seeded discrepancy alert shortly after connect (real Socket.IO path)
+      const demoTimer = setTimeout(() => {
+        this.broadcastStockUpdate({
+          event: 'DISCREPANCY_ALERT',
+          facilityId: 'FAS-8101-01',
+          facilityName: 'Puskesmas Kairatu Seram Barat',
+          kfaCode: '93000124',
+          medicineName: 'Paracetamol Syrup 120mg/5ml',
+          newStockQty: 120,
+          discrepancyPct: 24.1,
+          timestamp: new Date().toISOString()
+        });
+      }, 3500);
+
       socket.on('disconnect', () => {
+        clearTimeout(demoTimer);
         console.log(`[SIMPUL WebSocket]: Client disconnected - ${socket.id}`);
       });
     });
