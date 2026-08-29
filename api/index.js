@@ -1,4 +1,4 @@
-const appModule = require('../SIMPUL/BE/dist/app');
+const appModule = require('../SIMPUL/BE/dist/app.bundle.js');
 const app = appModule.default || appModule;
 
 module.exports = (req, res) => {
