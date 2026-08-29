@@ -28,16 +28,23 @@ const ALLOWED_ORIGINS = [
   process.env.CORS_ORIGIN
 ].filter(Boolean) as string[];
 
-// Initialize WebSocket Manager
-const wsService = WebSocketService.getInstance();
-wsService.initialize(httpServer);
+// Initialize WebSocket Manager (in non-serverless environments)
+if (!process.env.VERCEL) {
+  const wsService = WebSocketService.getInstance();
+  wsService.initialize(httpServer);
+}
 
 // Global Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin) || process.env.CORS_ORIGIN === '*') {
+      if (
+        !origin ||
+        ALLOWED_ORIGINS.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        process.env.CORS_ORIGIN === '*'
+      ) {
         callback(null, true);
         return;
       }
