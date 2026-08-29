@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm install --prefix SIMPUL/BE && npm install --prefix LORA && npm install --prefix SIMPUL/FE && npm install --prefix web && npm run build --prefix web"
+    "build": "npm run build --prefix SIMPUL/BE && npm run build --prefix web"
   },
   "dependencies": {
     "cors": "^2.8.5",

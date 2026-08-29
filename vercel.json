@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "npm install && npm install --prefix SIMPUL/BE && npm install --prefix LORA && npm install --prefix SIMPUL/FE && npm install --prefix web",
-  "buildCommand": "npm run build --prefix web",
+  "buildCommand": "npm run build --prefix SIMPUL/BE && npm run build --prefix web",
   "outputDirectory": "web/dist",
   "rewrites": [
     {
