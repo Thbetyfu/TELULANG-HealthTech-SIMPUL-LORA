@@ -7,7 +7,12 @@ import {
   Filter,
   FileText,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  RotateCcw,
+  Pill,
+  Clock,
+  Zap
 } from 'lucide-react';
 import { RealLeafletGisMap, RealGisFacilityNode } from '../components/RealLeafletGisMap';
 import { apiUrl } from '../config/api';
@@ -15,9 +20,14 @@ import { apiUrl } from '../config/api';
 export const PublicMapView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('SEMUA');
+  const [selectedFacilityName, setSelectedFacilityName] = useState('SEMUA');
+  const [selectedMedicineName, setSelectedMedicineName] = useState('SEMUA');
   const [selectedFacility, setSelectedFacility] = useState<RealGisFacilityNode | null>(null);
   const [facilities, setFacilities] = useState<RealGisFacilityNode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string>('');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [disputeForm, setDisputeForm] = useState({
     facilityName: '',
@@ -30,27 +40,53 @@ export const PublicMapView: React.FC = () => {
   const [disputeError, setDisputeError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const fetchFacilities = async (isManual = false) => {
+    try {
+      if (isManual) setIsRefreshing(true);
+      const res = await fetch(apiUrl('/api/v1/stocks/facilities'));
+      if (!res.ok) throw new Error('Gagal memuat faskes dari BE');
+      const json = await res.json();
+      if (Array.isArray(json.data)) {
+        setFacilities(json.data as RealGisFacilityNode[]);
+        setLoadError(null);
+        setLastSyncedAt(new Date().toLocaleTimeString());
+      }
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Gagal memuat peta publik');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const loadFacilities = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(apiUrl('/api/v1/stocks/facilities'));
-        if (!res.ok) throw new Error('Gagal memuat faskes dari BE');
-        const json = await res.json();
-        if (Array.isArray(json.data)) {
-          setFacilities(json.data as RealGisFacilityNode[]);
-          setLoadError(null);
-        }
-      } catch (err: unknown) {
-        setLoadError(err instanceof Error ? err.message : 'Gagal memuat peta publik');
-      } finally {
-        setLoading(false);
+    fetchFacilities();
+  }, []);
+
+  // Effect Auto-Refresh (setiap 15 detik)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      fetchFacilities(false);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
+  // Listener untuk filter faskes dari notifikasi modal
+  useEffect(() => {
+    const handleCustomFilter = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.facilityName) {
+        setSelectedFacilityName(detail.facilityName);
       }
     };
-    loadFacilities();
+    window.addEventListener('filter_facility_event', handleCustomFilter);
+    return () => window.removeEventListener('filter_facility_event', handleCustomFilter);
   }, []);
 
   const provinces = Array.from(new Set(facilities.map((f) => f.provinceName))).sort();
+  const puskesmasList = Array.from(new Set(facilities.map((f) => f.facilityName))).sort();
+  const medicineList = Array.from(new Set(facilities.map((f) => f.medicineName))).sort();
 
   const filteredFacilities = facilities.filter((item) => {
     const q = searchQuery.toLowerCase();
@@ -59,8 +95,17 @@ export const PublicMapView: React.FC = () => {
       item.medicineName.toLowerCase().includes(q) ||
       item.provinceName.toLowerCase().includes(q);
     const matchProvince = selectedProvince === 'SEMUA' || item.provinceName === selectedProvince;
-    return matchQuery && matchProvince;
+    const matchPuskesmas = selectedFacilityName === 'SEMUA' || item.facilityName === selectedFacilityName;
+    const matchMedicine = selectedMedicineName === 'SEMUA' || item.medicineName === selectedMedicineName;
+    return matchQuery && matchProvince && matchPuskesmas && matchMedicine;
   });
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedProvince('SEMUA');
+    setSelectedFacilityName('SEMUA');
+    setSelectedMedicineName('SEMUA');
+  };
 
   const handleDisputeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,26 +152,103 @@ export const PublicMapView: React.FC = () => {
       style={{ background: 'var(--md-sys-color-surface)', color: 'var(--md-sys-color-on-surface)' }}
     >
       <main className="mx-auto max-w-7xl px-4 sm:px-8 pt-6 sm:pt-8 space-y-6 sm:space-y-8">
+        
+        {/* Header Bar Actions: Refresh & Auto-Sync Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+          <div>
+            <h1 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-sky-400" />
+              Peta Transparansi Stok Logistik Faskes
+            </h1>
+            <p className="text-xs font-mono" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+              Monitoring ketersediaan faskes & obat esensial secara spasial waktu-nyata
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            {lastSyncedAt && (
+              <span
+                className="flex items-center gap-1.5 px-2.5 py-1 border text-[11px]"
+                style={{
+                  background: 'var(--md-sys-color-surface-container)',
+                  borderColor: 'var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-sys-shape-corner-small)',
+                  color: 'var(--md-sys-color-on-surface-variant)'
+                }}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                Sync: {lastSyncedAt}
+              </span>
+            )}
+
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              type="button"
+              className={`flex items-center gap-1.5 px-3 py-1.5 border font-semibold text-xs transition-colors ${
+                autoRefresh
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-transparent text-gray-400 border-gray-700'
+              }`}
+              style={{ borderRadius: 'var(--md-sys-shape-corner-small)' }}
+              title="Toggle pembaruan data otomatis setiap 15 detik"
+            >
+              <Zap className={`w-3.5 h-3.5 ${autoRefresh ? 'text-emerald-400 fill-emerald-400 animate-pulse' : ''}`} />
+              <span>Auto-Sync {autoRefresh ? 'ON' : 'OFF'}</span>
+            </button>
+
+            <button
+              onClick={() => fetchFacilities(true)}
+              disabled={isRefreshing}
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 border font-semibold text-xs transition-colors hover:bg-white/10 active:scale-95"
+              style={{
+                background: 'var(--md-sys-color-surface-container-high)',
+                borderColor: 'var(--md-sys-color-outline-variant)',
+                borderRadius: 'var(--md-sys-shape-corner-small)',
+                color: 'var(--md-sys-color-on-surface)'
+              }}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-sky-400' : ''}`} />
+              <span>Refresh</span>
+            </button>
+
+            {(searchQuery || selectedProvince !== 'SEMUA' || selectedFacilityName !== 'SEMUA' || selectedMedicineName !== 'SEMUA') && (
+              <button
+                onClick={handleResetFilters}
+                type="button"
+                className="flex items-center gap-1.5 px-3 py-1.5 border text-xs font-semibold transition-colors hover:bg-rose-500/10 text-rose-400 border-rose-500/30"
+                style={{ borderRadius: 'var(--md-sys-shape-corner-small)' }}
+                title="Reset semua filter pencarian"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Filter</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Control Bar with List Boxes */}
         <div
-          className="border p-4 flex flex-col md:flex-row items-center gap-4"
+          className="border p-4 flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
           style={{
             background: 'var(--md-sys-color-surface-container-low)',
             borderColor: 'var(--md-sys-color-outline-variant)',
             borderRadius: 'var(--md-sys-shape-corner-medium)'
           }}
         >
+          {/* Teks Pencarian */}
           <div
-            className="flex-1 flex items-center gap-3 px-4 py-2.5 border w-full"
+            className="flex-1 flex items-center gap-3 px-4 py-2 border"
             style={{
               background: 'var(--md-sys-color-surface)',
               borderColor: 'var(--md-sys-color-outline-variant)',
               borderRadius: 'var(--md-sys-shape-corner-small)'
             }}
           >
-            <Search className="w-4 h-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }} />
+            <Search className="w-4 h-4 shrink-0" style={{ color: 'var(--md-sys-color-on-surface-variant)' }} />
             <input
               type="text"
-              placeholder="Cari faskes, provinsi, atau nama obat esensial..."
+              placeholder="Cari kata kunci faskes, provinsi, atau obat..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent text-xs outline-none font-mono w-full"
@@ -134,26 +256,75 @@ export const PublicMapView: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto font-mono">
-            <Filter className="w-4 h-4" style={{ color: 'var(--md-sys-color-secondary)' }} />
-            <select
-              value={selectedProvince}
-              onChange={(e) => setSelectedProvince(e.target.value)}
-              className="text-xs font-medium px-3 py-2.5 border outline-none cursor-pointer w-full md:w-auto"
-              style={{
-                background: 'var(--md-sys-color-surface)',
-                color: 'var(--md-sys-color-on-surface)',
-                borderColor: 'var(--md-sys-color-outline-variant)',
-                borderRadius: 'var(--md-sys-shape-corner-small)'
-              }}
-            >
-              <option value="SEMUA">Semua Wilayah</option>
-              {provinces.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2.5 font-mono">
+            {/* List Box 1: Provinsi */}
+            <div className="flex items-center gap-1.5 flex-1 lg:flex-none">
+              <Filter className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--md-sys-color-secondary)' }} />
+              <select
+                value={selectedProvince}
+                onChange={(e) => setSelectedProvince(e.target.value)}
+                className="text-xs font-medium px-3 py-2 border outline-none cursor-pointer w-full lg:w-44 truncate"
+                style={{
+                  background: 'var(--md-sys-color-surface)',
+                  color: 'var(--md-sys-color-on-surface)',
+                  borderColor: 'var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-sys-shape-corner-small)'
+                }}
+              >
+                <option value="SEMUA">Semua Wilayah</option>
+                {provinces.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* List Box 2: Nama Puskesmas / Faskes */}
+            <div className="flex items-center gap-1.5 flex-1 lg:flex-none">
+              <Building2 className="w-3.5 h-3.5 shrink-0 text-sky-400" />
+              <select
+                value={selectedFacilityName}
+                onChange={(e) => setSelectedFacilityName(e.target.value)}
+                className="text-xs font-medium px-3 py-2 border outline-none cursor-pointer w-full lg:w-52 truncate"
+                style={{
+                  background: 'var(--md-sys-color-surface)',
+                  color: 'var(--md-sys-color-on-surface)',
+                  borderColor: selectedFacilityName !== 'SEMUA' ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-sys-shape-corner-small)'
+                }}
+              >
+                <option value="SEMUA">Semua Puskesmas / Faskes</option>
+                {puskesmasList.map((fac) => (
+                  <option key={fac} value={fac}>
+                    {fac}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* List Box 3: Nama Obat Esensial */}
+            <div className="flex items-center gap-1.5 flex-1 lg:flex-none">
+              <Pill className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <select
+                value={selectedMedicineName}
+                onChange={(e) => setSelectedMedicineName(e.target.value)}
+                className="text-xs font-medium px-3 py-2 border outline-none cursor-pointer w-full lg:w-52 truncate"
+                style={{
+                  background: 'var(--md-sys-color-surface)',
+                  color: 'var(--md-sys-color-on-surface)',
+                  borderColor: selectedMedicineName !== 'SEMUA' ? 'var(--md-sys-color-secondary)' : 'var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-sys-shape-corner-small)'
+                }}
+              >
+                <option value="SEMUA">Semua Obat Esensial</option>
+                {medicineList.map((med) => (
+                  <option key={med} value={med}>
+                    {med}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
