@@ -118,7 +118,7 @@ app.get('/', (_req: Request, res: Response) => {
 // Global Error Handler
 app.use(globalErrorHandler);
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   httpServer.listen(PORT, () => {
     console.log(`[SIMPUL Server & WebSockets]: Running on http://localhost:${PORT}`);
   });
