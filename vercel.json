@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd web && npm install && npm run build",
+  "installCommand": "npm install && cd LORA && npm install && cd ../SIMPUL/FE && npm install && cd ../web && npm install",
+  "buildCommand": "cd web && npm run build",
   "outputDirectory": "web/dist",
   "rewrites": [
     {
