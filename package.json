@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd web && npm install && npm run build"
+    "build": "cd LORA && npm install && cd ../SIMPUL/FE && npm install && cd ../../web && npm install && npm run build"
   }
 }
