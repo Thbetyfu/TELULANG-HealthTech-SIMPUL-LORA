@@ -31,7 +31,9 @@ export const PublicMapView: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [disputeForm, setDisputeForm] = useState({
     facilityName: '',
+    customFacilityName: '',
     medicineName: '',
+    customMedicineName: '',
     description: '',
     contactEmail: ''
   });
@@ -88,6 +90,47 @@ export const PublicMapView: React.FC = () => {
   const puskesmasList = Array.from(new Set(facilities.map((f) => f.facilityName))).sort();
   const medicineList = Array.from(new Set(facilities.map((f) => f.medicineName))).sort();
 
+  // List Box options untuk Formulir Audit Publik
+  const auditFacilityOptions = puskesmasList;
+  const auditMedicineOptions = React.useMemo(() => {
+    if (!disputeForm.facilityName || disputeForm.facilityName === 'LAINNYA') {
+      return medicineList;
+    }
+    const matchingFacilities = facilities.filter((f) => f.facilityName === disputeForm.facilityName);
+    return Array.from(new Set(matchingFacilities.map((f) => f.medicineName))).sort();
+  }, [facilities, disputeForm.facilityName, medicineList]);
+
+  const handleSelectFacility = (fac: RealGisFacilityNode) => {
+    setSelectedFacility(fac);
+    setDisputeForm((prev) => ({
+      ...prev,
+      facilityName: fac.facilityName,
+      customFacilityName: '',
+      medicineName: fac.medicineName,
+      customMedicineName: ''
+    }));
+  };
+
+  const handleFacilityChange = (val: string) => {
+    setDisputeForm((prev) => {
+      let nextMedicine = prev.medicineName;
+      if (val && val !== 'LAINNYA') {
+        const availableMeds = facilities
+          .filter((f) => f.facilityName === val)
+          .map((f) => f.medicineName);
+        if (nextMedicine !== 'LAINNYA' && !availableMeds.includes(nextMedicine)) {
+          nextMedicine = availableMeds.length === 1 ? availableMeds[0] : '';
+        }
+      }
+      return {
+        ...prev,
+        facilityName: val,
+        customFacilityName: val === 'LAINNYA' ? prev.customFacilityName : '',
+        medicineName: nextMedicine
+      };
+    });
+  };
+
   const filteredFacilities = facilities.filter((item) => {
     const q = searchQuery.toLowerCase();
     const matchQuery =
@@ -109,21 +152,39 @@ export const PublicMapView: React.FC = () => {
 
   const handleDisputeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!disputeForm.facilityName || !disputeForm.medicineName) return;
+    const effectiveFacility =
+      disputeForm.facilityName === 'LAINNYA'
+        ? disputeForm.customFacilityName.trim()
+        : disputeForm.facilityName.trim();
+
+    const effectiveMedicine =
+      disputeForm.medicineName === 'LAINNYA'
+        ? disputeForm.customMedicineName.trim()
+        : disputeForm.medicineName.trim();
+
+    if (!effectiveFacility) {
+      setDisputeError('Nama Faskes / Puskesmas wajib dipilih atau diisi');
+      return;
+    }
+    if (!effectiveMedicine) {
+      setDisputeError('Nama Obat Esensial wajib dipilih atau diisi');
+      return;
+    }
 
     setSubmitting(true);
     setDisputeError(null);
 
     try {
+      const selectedFacObj = facilities.find((f) => f.facilityName === effectiveFacility);
       const res = await fetch(apiUrl('/api/v1/disputes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          puskesmasName: `${disputeForm.facilityName} | ${disputeForm.medicineName}`,
-          provinceName: selectedFacility?.provinceName,
+          puskesmasName: `${effectiveFacility} | ${effectiveMedicine}`,
+          provinceName: selectedFacObj?.provinceName || selectedFacility?.provinceName,
           disputeNotes:
             disputeForm.description ||
-            `Pengaduan publik terkait ${disputeForm.medicineName} di ${disputeForm.facilityName}`
+            `Pengaduan publik terkait ${effectiveMedicine} di ${effectiveFacility}`
         })
       });
 
@@ -137,7 +198,14 @@ export const PublicMapView: React.FC = () => {
       setTimeout(() => {
         setSubmitted(false);
         setTicketId(null);
-        setDisputeForm({ facilityName: '', medicineName: '', description: '', contactEmail: '' });
+        setDisputeForm({
+          facilityName: '',
+          customFacilityName: '',
+          medicineName: '',
+          customMedicineName: '',
+          description: '',
+          contactEmail: ''
+        });
       }, 4000);
     } catch (err: unknown) {
       setDisputeError(err instanceof Error ? err.message : 'Gagal mengirim pengaduan');
@@ -356,7 +424,7 @@ export const PublicMapView: React.FC = () => {
               <RealLeafletGisMap
                 facilities={filteredFacilities}
                 selectedFacilityId={selectedFacility?.id}
-                onSelectFacility={(fac) => setSelectedFacility(fac)}
+                onSelectFacility={(fac) => handleSelectFacility(fac)}
               />
             </div>
 
@@ -382,7 +450,7 @@ export const PublicMapView: React.FC = () => {
                   return (
                     <div
                       key={stock.id}
-                      onClick={() => setSelectedFacility(stock)}
+                      onClick={() => handleSelectFacility(stock)}
                       className="p-3 border cursor-pointer transition-colors"
                       style={{
                         background: isSelected
@@ -482,49 +550,108 @@ export const PublicMapView: React.FC = () => {
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
+                  {/* List Box 1: Nama Faskes / Puskesmas */}
+                  <div className="space-y-1.5">
                     <label
-                      className="text-xs font-medium block mb-1"
+                      className="text-xs font-medium block"
                       style={{ color: 'var(--md-sys-color-on-surface-variant)' }}
                     >
                       Nama Faskes / Puskesmas
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
-                      placeholder="Contoh: Puskesmas Kairatu"
                       value={disputeForm.facilityName}
-                      onChange={(e) => setDisputeForm({ ...disputeForm, facilityName: e.target.value })}
-                      className="w-full border px-3 py-2 text-xs outline-none font-mono"
+                      onChange={(e) => handleFacilityChange(e.target.value)}
+                      className="w-full border px-3 py-2 text-xs outline-none font-mono cursor-pointer"
                       style={{
                         background: 'var(--md-sys-color-surface)',
                         borderColor: 'var(--md-sys-color-outline-variant)',
                         color: 'var(--md-sys-color-on-surface)',
                         borderRadius: 'var(--md-sys-shape-corner-small)'
                       }}
-                    />
+                    >
+                      <option value="">-- Pilih Faskes / Puskesmas --</option>
+                      {auditFacilityOptions.map((fac) => (
+                        <option key={fac} value={fac}>
+                          {fac}
+                        </option>
+                      ))}
+                      <option value="LAINNYA">+ Faskes Lainnya (Input Manual)</option>
+                    </select>
+
+                    {disputeForm.facilityName === 'LAINNYA' && (
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ketik nama faskes / puskesmas manual..."
+                        value={disputeForm.customFacilityName}
+                        onChange={(e) =>
+                          setDisputeForm({ ...disputeForm, customFacilityName: e.target.value })
+                        }
+                        className="w-full border px-3 py-2 text-xs outline-none font-mono mt-1"
+                        style={{
+                          background: 'var(--md-sys-color-surface)',
+                          borderColor: 'var(--md-sys-color-primary)',
+                          color: 'var(--md-sys-color-on-surface)',
+                          borderRadius: 'var(--md-sys-shape-corner-small)'
+                        }}
+                      />
+                    )}
                   </div>
-                  <div>
+
+                  {/* List Box 2: Nama Obat Esensial */}
+                  <div className="space-y-1.5">
                     <label
-                      className="text-xs font-medium block mb-1"
+                      className="text-xs font-medium block"
                       style={{ color: 'var(--md-sys-color-on-surface-variant)' }}
                     >
                       Nama Obat Esensial
                     </label>
-                    <input
-                      type="text"
+                    <select
                       required
-                      placeholder="Contoh: Paracetamol Syrup"
                       value={disputeForm.medicineName}
-                      onChange={(e) => setDisputeForm({ ...disputeForm, medicineName: e.target.value })}
-                      className="w-full border px-3 py-2 text-xs outline-none font-mono"
+                      onChange={(e) =>
+                        setDisputeForm({
+                          ...disputeForm,
+                          medicineName: e.target.value,
+                          customMedicineName: e.target.value === 'LAINNYA' ? disputeForm.customMedicineName : ''
+                        })
+                      }
+                      className="w-full border px-3 py-2 text-xs outline-none font-mono cursor-pointer"
                       style={{
                         background: 'var(--md-sys-color-surface)',
                         borderColor: 'var(--md-sys-color-outline-variant)',
                         color: 'var(--md-sys-color-on-surface)',
                         borderRadius: 'var(--md-sys-shape-corner-small)'
                       }}
-                    />
+                    >
+                      <option value="">-- Pilih Obat Esensial --</option>
+                      {auditMedicineOptions.map((med) => (
+                        <option key={med} value={med}>
+                          {med}
+                        </option>
+                      ))}
+                      <option value="LAINNYA">+ Obat Lainnya (Input Manual)</option>
+                    </select>
+
+                    {disputeForm.medicineName === 'LAINNYA' && (
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ketik nama obat esensial manual..."
+                        value={disputeForm.customMedicineName}
+                        onChange={(e) =>
+                          setDisputeForm({ ...disputeForm, customMedicineName: e.target.value })
+                        }
+                        className="w-full border px-3 py-2 text-xs outline-none font-mono mt-1"
+                        style={{
+                          background: 'var(--md-sys-color-surface)',
+                          borderColor: 'var(--md-sys-color-secondary)',
+                          color: 'var(--md-sys-color-on-surface)',
+                          borderRadius: 'var(--md-sys-shape-corner-small)'
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
 
